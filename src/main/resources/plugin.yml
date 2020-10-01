@@ -1,0 +1,17 @@
+name: "HavenRPLocks"
+version: "1.1"
+main: net.earomc.havenrp.locks.HavenRPLocks
+authors:
+  - "earomc"
+commands:
+  lock:
+    description: "Locks a container."
+    usage: "/lock <lock> Specify a lock word. You can then only open the container with an item with the lock's name."
+  unlock:
+    description: "Unlocks a container."
+    usage: "/unlock <lock> You have to specify the lock that was used to lock the container."
+  adminunlock:
+    description: "Unlocks a container without having to specify the lock word."
+    usage: "/adminunlock"
+    permission: "chestlocker.adminunlock"
+    permission-message: "§cYou do not have the permission to do that."
