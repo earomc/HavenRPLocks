@@ -1,6 +1,8 @@
 package net.earomc.havenrp.locks.lockables;
 
 import org.bukkit.block.Barrel;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Lockable;
 
 public class LockableBarrel implements LockableContainer {
 
@@ -10,60 +12,22 @@ public class LockableBarrel implements LockableContainer {
         this.barrel = chest;
     }
 
-
-    @Override
-    public LockResult tryLock(String lock) {
-        if (!barrel.isLocked()) {
-            lock(lock);
-            return LockResult.SUCCESS;
-        } else {
-            return LockResult.LOCK_ALREADY_SET;
-        }
-    }
-
-    @Override
-    public UnlockResult tryUnlock(String lock) {
-        if (barrel.isLocked()) {
-            String currentLock = barrel.getLock();
-            if (currentLock.equals(lock)) {
-                unlock();
-                return UnlockResult.SUCCESS;
-            } else {
-                return UnlockResult.INCORRECT_LOCK;
-            }
-        } else {
-            return UnlockResult.CONTAINER_NOT_LOCKED;
-        }
-    }
-
-    @Override
-    public void lock(String lock) {
-        barrel.setLock(lock);
-        barrel.update();
-    }
-
-    @Override
-    public void unlock() {
-        barrel.setLock("");
-        barrel.update();
-    }
-
     @Override
     public String getName() {
         return "Barrel";
     }
 
-    @Override
-    public String getLock() {
-        return barrel.getLock();
-    }
-
-    @Override
-    public boolean isLocked() {
-        return barrel.isLocked();
-    }
-
     public Barrel getBarrel() {
+        return barrel;
+    }
+
+    @Override
+    public Lockable getLockable() {
+        return barrel;
+    }
+
+    @Override
+    public BlockState getState() {
         return barrel;
     }
 }

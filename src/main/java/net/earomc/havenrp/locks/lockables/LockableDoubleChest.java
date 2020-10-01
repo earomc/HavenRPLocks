@@ -1,6 +1,9 @@
 package net.earomc.havenrp.locks.lockables;
 
-public class LockableDoubleChest implements LockableContainer {
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Lockable;
+
+public class LockableDoubleChest implements LockableContainer, Lockable {
 
     private LockableChest chestLeft;
     private LockableChest chestRight;
@@ -60,6 +63,16 @@ public class LockableDoubleChest implements LockableContainer {
     }
 
     @Override
+    public Lockable getLockable() {
+        return this;
+    }
+
+    @Override
+    public BlockState getState() {
+        throw new IllegalArgumentException("Double Chest! There isn't a single BlockState to return!");
+    }
+
+    @Override
     public String getName() {
         return "Double chest";
     }
@@ -89,5 +102,10 @@ public class LockableDoubleChest implements LockableContainer {
     public String toString() {
         return this.getClass().getName() + " lock: " + getLock() + ", chestRightLock: " + chestRight.getLock()
                 + ", chestLeftLock: " + chestLeft.getLock() + ", @" + hashCode();
+    }
+
+    @Override
+    public void setLock(String s) {
+        lock(s);
     }
 }

@@ -1,64 +1,29 @@
 package net.earomc.havenrp.locks.lockables;
 
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Dropper;
+import org.bukkit.block.Lockable;
 
 public class LockableDropper implements LockableContainer {
 
-    private Dropper dropper;
+    private final Dropper dropper;
 
     public LockableDropper(Dropper dropper) {
         this.dropper = dropper;
     }
 
     @Override
-    public LockResult tryLock(String lock) {
-        if (!dropper.isLocked()) {
-            lock(lock);
-            return LockResult.SUCCESS;
-        } else {
-            return LockResult.LOCK_ALREADY_SET;
-        }
+    public Lockable getLockable() {
+        return dropper;
     }
 
     @Override
-    public UnlockResult tryUnlock(String lock) {
-        if (isLocked()) {
-            if (getLock().equals(lock)) {
-                unlock();
-                return UnlockResult.SUCCESS;
-            } else {
-                return UnlockResult.INCORRECT_LOCK;
-            }
-        } else {
-            return UnlockResult.CONTAINER_NOT_LOCKED;
-        }
-    }
-
-    @Override
-    public void lock(String lock) {
-        dropper.setLock(lock);
-        dropper.update();
-    }
-
-
-    @Override
-    public void unlock() {
-        dropper.setLock("");
-        dropper.update();
+    public BlockState getState() {
+        return dropper;
     }
 
     @Override
     public String getName() {
         return "Dropper";
-    }
-
-    @Override
-    public String getLock() {
-        return dropper.getLock();
-    }
-
-    @Override
-    public boolean isLocked() {
-        return dropper.isLocked();
     }
 }

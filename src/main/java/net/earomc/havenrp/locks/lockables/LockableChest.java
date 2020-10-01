@@ -1,6 +1,8 @@
 package net.earomc.havenrp.locks.lockables;
 
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
+import org.bukkit.block.Lockable;
 
 public class LockableChest implements LockableContainer {
 
@@ -41,10 +43,15 @@ public class LockableChest implements LockableContainer {
 
     }
 
+
     @Override
-    public void unlock() {
-        chest.setLock("");
-        chest.update();
+    public BlockState getState() {
+        return chest;
+    }
+
+    @Override
+    public Lockable getLockable() {
+        return chest;
     }
 
     @Override
