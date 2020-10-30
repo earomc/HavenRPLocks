@@ -6,7 +6,7 @@ import org.bukkit.block.Lockable;
 
 public class LockableBarrel implements LockableContainer {
 
-    private Barrel barrel;
+    private final Barrel barrel;
 
     public LockableBarrel(Barrel chest) {
         this.barrel = chest;

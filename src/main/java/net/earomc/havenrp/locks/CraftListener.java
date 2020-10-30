@@ -1,7 +1,10 @@
 package net.earomc.havenrp.locks;
 
+import net.earomc.havenrp.locks.util.SimpleSlot;
 import net.earomc.havenrp.locks.util.UUIDDataType;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftInventory;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -13,12 +16,17 @@ import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import javax.annotation.Nullable;
+import java.util.HashMap;
 import java.util.UUID;
 
 public class CraftListener implements Listener {
 
+    private HashMap<Player, SimpleSlot> playerToSlotMap;
 
-    public CraftListener() {}
+    public CraftListener() {
+        playerToSlotMap = new HashMap<>();
+    }
 
     @EventHandler
     public void onCraft(InventoryClickEvent event) {
@@ -55,6 +63,58 @@ public class CraftListener implements Listener {
             }
         }
 
+    }
+
+    @EventHandler
+    public void onPrepareCraftingKey(PrepareItemCraftEvent event) {
+        CraftingInventory inventory = event.getInventory();
+        ItemStack result = inventory.getResult();
+        if (result == null) return;
+        if (result.isSimilar(Lock.getDefaultKeyItem())) {
+            InventoryHolder holder = inventory.getHolder();
+            ItemStack[] matrix = inventory.getMatrix();
+
+
+            if (holder instanceof Player) {
+                Player player = (Player) holder;
+                SimpleSlot slotWithLockItem = getSlotWithLockItem(inventory);
+
+                Lock lock = null;
+
+                if (slotWithLockItem != null) {
+                    lock = Lock.getFromItem(slotWithLockItem.getItemStack());
+                    inventory.setResult(lock.getKeyItem());
+                    playerToSlotMap.put(player, slotWithLockItem);
+                } else {
+                    inventory.setResult(null);
+                    playerToSlotMap.remove(player);
+                }
+            }
+        }
+    }
+
+
+
+    @Nullable
+    private SimpleSlot getSlotWithLockItem(CraftingInventory craftingInventory) {
+        Lock lockFromItem = null;
+        ItemStack lockItem = null;
+        int lockSlot = -1;
+        ItemStack[] matrix = craftingInventory.getMatrix();
+        for (int i = 0; i < matrix.length; i++) {
+            ItemStack current = matrix[i];
+            lockFromItem = Lock.getFromItem(current);
+            if (lockFromItem != null) {
+                lockSlot = i;
+                Bukkit.broadcastMessage("Lock slot: " + lockSlot);
+                lockItem = current;
+                break;
+            }
+        }
+        if (lockSlot != -1) {
+            return new SimpleSlot(lockItem, lockSlot, craftingInventory);
+        }
+        return null;
     }
 
     @EventHandler

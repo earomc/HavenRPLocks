@@ -99,6 +99,7 @@ public class Lock {
     }
 
     public static Lock getFromItem(ItemStack itemStack) {
+        if (itemStack == null) return null;
         Lock lock = null;
         ItemMeta itemMeta = itemStack.getItemMeta();
         if (itemMeta == null) return null;

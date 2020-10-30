@@ -46,7 +46,7 @@ public class HavenRPLocks extends JavaPlugin {
         ShapelessRecipe recipeKey = new ShapelessRecipe(new NamespacedKey(this, "key"), Lock.getDefaultKeyItem());
         recipeKey.addIngredient(Material.IRON_NUGGET);
         recipeKey.addIngredient(Material.ENCHANTED_BOOK);
-
+        Bukkit.getServer().addRecipe(recipeKey);
     }
 
     private void registerEvents(Listener... listeners) {
