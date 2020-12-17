@@ -4,7 +4,6 @@ import net.earomc.havenrp.locks.util.SimpleSlot;
 import net.earomc.havenrp.locks.util.UUIDDataType;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
-import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftInventory;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -42,8 +41,8 @@ public class CraftListener implements Listener {
                     event.setCancelled(true);
                     player.sendMessage("§cYou need space in your inventory for the key to craft a lock!");
                 } else {
-                    Lock lock = new Lock(uuid);
-                    player.getInventory().addItem(lock.getKeyItem());
+                    LockKeyPair lockKeyPair = new LockKeyPair(uuid);
+                    player.getInventory().addItem(lockKeyPair.getKeyItem());
                 }
             }
         }
@@ -56,9 +55,9 @@ public class CraftListener implements Listener {
         if (result == null) return;
         if (holder instanceof Player) {
             Player player = (Player) holder;
-            if (result.isSimilar(Lock.getDefaultLockItem())) {
-                Lock lock = new Lock();
-                event.getInventory().setResult(lock.getLockItem());
+            if (result.isSimilar(LockKeyPair.getDefaultLockItem())) {
+                LockKeyPair lockKeyPair = new LockKeyPair();
+                event.getInventory().setResult(lockKeyPair.getLockItem());
 
             }
         }
@@ -70,7 +69,7 @@ public class CraftListener implements Listener {
         CraftingInventory inventory = event.getInventory();
         ItemStack result = inventory.getResult();
         if (result == null) return;
-        if (result.isSimilar(Lock.getDefaultKeyItem())) {
+        if (result.isSimilar(LockKeyPair.getDefaultKeyItem())) {
             InventoryHolder holder = inventory.getHolder();
             ItemStack[] matrix = inventory.getMatrix();
 
@@ -79,11 +78,11 @@ public class CraftListener implements Listener {
                 Player player = (Player) holder;
                 SimpleSlot slotWithLockItem = getSlotWithLockItem(inventory);
 
-                Lock lock = null;
+                LockKeyPair lockKeyPair = null;
 
                 if (slotWithLockItem != null) {
-                    lock = Lock.getFromItem(slotWithLockItem.getItemStack());
-                    inventory.setResult(lock.getKeyItem());
+                    lockKeyPair = LockKeyPair.getFromItem(slotWithLockItem.getItemStack());
+                    inventory.setResult(lockKeyPair.getKeyItem());
                     playerToSlotMap.put(player, slotWithLockItem);
                 } else {
                     inventory.setResult(null);
@@ -97,14 +96,14 @@ public class CraftListener implements Listener {
 
     @Nullable
     private SimpleSlot getSlotWithLockItem(CraftingInventory craftingInventory) {
-        Lock lockFromItem = null;
+        LockKeyPair lockKeyPairFromItem = null;
         ItemStack lockItem = null;
         int lockSlot = -1;
         ItemStack[] matrix = craftingInventory.getMatrix();
         for (int i = 0; i < matrix.length; i++) {
             ItemStack current = matrix[i];
-            lockFromItem = Lock.getFromItem(current);
-            if (lockFromItem != null) {
+            lockKeyPairFromItem = LockKeyPair.getFromItem(current);
+            if (lockKeyPairFromItem != null) {
                 lockSlot = i;
                 Bukkit.broadcastMessage("Lock slot: " + lockSlot);
                 lockItem = current;
@@ -126,12 +125,12 @@ public class CraftListener implements Listener {
     @EventHandler
     public void onChat(AsyncPlayerChatEvent event) {
         String message = event.getMessage();
-        Lock lock = new Lock();
+        LockKeyPair lockKeyPair = new LockKeyPair();
         PlayerInventory inventory = event.getPlayer().getInventory();
         if (message.equalsIgnoreCase("lockpls")) {
-            inventory.addItem(lock.getLockItem());
+            inventory.addItem(lockKeyPair.getLockItem());
         } else if (message.equalsIgnoreCase("keypls")) {
-            inventory.addItem(lock.getKeyItem());
+            inventory.addItem(lockKeyPair.getKeyItem());
         }
 
         if (message.equalsIgnoreCase("item")) {

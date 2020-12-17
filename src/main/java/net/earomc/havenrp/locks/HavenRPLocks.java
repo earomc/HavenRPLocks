@@ -3,7 +3,7 @@ package net.earomc.havenrp.locks;
 
 import net.earomc.havenrp.locks.commands.AdminUnlockCommand;
 import net.earomc.havenrp.locks.commands.LockCommand;
-import net.earomc.havenrp.locks.commands.UnlockCommand;
+import net.earomc.havenrp.locks.commands.TestCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -33,17 +33,17 @@ public class HavenRPLocks extends JavaPlugin {
 
     private void registerRecipes() {
 
-        ShapedRecipe recipeLock = new ShapedRecipe(new NamespacedKey(this, "lock"), Lock.getDefaultLockItem());
+        ShapedRecipe recipeLock = new ShapedRecipe(new NamespacedKey(this, "lock"), LockKeyPair.getDefaultLockItem());
         recipeLock.shape(
-                "#*#",
-                "*#*",
+                "#n#",
+                "n#n",
                 "#i#");
         recipeLock.setIngredient('#', Material.AIR);
-        recipeLock.setIngredient('*', Material.IRON_NUGGET);
+        recipeLock.setIngredient('n', Material.IRON_NUGGET);
         recipeLock.setIngredient('i', Material.IRON_INGOT);
         Bukkit.getServer().addRecipe(recipeLock);
 
-        ShapelessRecipe recipeKey = new ShapelessRecipe(new NamespacedKey(this, "key"), Lock.getDefaultKeyItem());
+        ShapelessRecipe recipeKey = new ShapelessRecipe(new NamespacedKey(this, "key"), LockKeyPair.getDefaultKeyItem());
         recipeKey.addIngredient(Material.IRON_NUGGET);
         recipeKey.addIngredient(Material.ENCHANTED_BOOK);
         Bukkit.getServer().addRecipe(recipeKey);
@@ -59,7 +59,7 @@ public class HavenRPLocks extends JavaPlugin {
     @SuppressWarnings("ConstantConditions")
     private void registerCommands() {
         getCommand("lock").setExecutor(new LockCommand(containerLockManager));
-        getCommand("unlock").setExecutor(new UnlockCommand(containerLockManager));
         getCommand("adminunlock").setExecutor(new AdminUnlockCommand(containerLockManager));
+        getCommand("testi").setExecutor(new TestCommand());
     }
 }

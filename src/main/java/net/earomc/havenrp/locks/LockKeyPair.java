@@ -5,14 +5,18 @@ import net.earomc.havenrp.locks.util.UUIDDataType;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
+import javax.annotation.Nullable;
 import java.util.UUID;
 
-public class Lock {
+public class LockKeyPair {
 
     private UUID uuid;
     private ItemStack lockItem;
@@ -24,21 +28,24 @@ public class Lock {
     private static final int KEY_CUSTOM_MODEL_DATA = 452921;
 
     static {
-        Lock lock = new Lock();
-        DEFAULT_LOCK_ITEM = lock.getLockItem();
-        DEFAULT_KEY_ITEM = lock.getKeyItem();
+        LockKeyPair lockKeyPair = new LockKeyPair();
+        DEFAULT_LOCK_ITEM = lockKeyPair.getLockItem();
+        DEFAULT_KEY_ITEM = lockKeyPair.getKeyItem();
     }
-    public Lock(UUID uuid) {
+    public LockKeyPair(UUID uuid) {
         this.uuid = uuid;
     }
 
-    public Lock() {
+    public LockKeyPair() {
         this(UUID.randomUUID());
     }
 
 
     public void giveKey(Player player) {
-        player.getInventory().addItem(keyItem);
+        player.getInventory().addItem(getKeyItem());
+    }
+    public void giveLock(Player player) {
+        player.getInventory().addItem(getLockItem());
     }
 
     public static ItemStack getDefaultLockItem() {
@@ -62,7 +69,7 @@ public class Lock {
 
             NamespacedKey lockUUIDKey = new NamespacedKey(HavenRPLocks.getInstance(), "lockUUID");
             lockMeta.getPersistentDataContainer().set(lockUUIDKey, UUIDDataType.INSTANCE, uuid);
-            Bukkit.broadcastMessage("lockItem UUID: " + lockMeta.getPersistentDataContainer().get(lockUUIDKey, UUIDDataType.INSTANCE));
+            //Bukkit.broadcastMessage("lockItem UUID: " + lockMeta.getPersistentDataContainer().get(lockUUIDKey, UUIDDataType.INSTANCE));
 
             //Lock Model
             lockMeta.setCustomModelData(LOCK_CUSTOM_MODEL_DATA);
@@ -84,7 +91,7 @@ public class Lock {
             NamespacedKey keyUUIDKey = new NamespacedKey(HavenRPLocks.getInstance(), "keyUUID");
             keyMeta.getPersistentDataContainer().set(keyUUIDKey, UUIDDataType.INSTANCE, uuid);
 
-            Bukkit.broadcastMessage("keyItem UUID: " + keyMeta.getPersistentDataContainer().get(keyUUIDKey, UUIDDataType.INSTANCE));
+            //Bukkit.broadcastMessage("keyItem UUID: " + keyMeta.getPersistentDataContainer().get(keyUUIDKey, UUIDDataType.INSTANCE));
             //Key Model
             keyMeta.setCustomModelData(KEY_CUSTOM_MODEL_DATA);
             NBTEditor.set(keyItem, (byte) 1, "key");
@@ -98,23 +105,41 @@ public class Lock {
         return uuid;
     }
 
-    public static Lock getFromItem(ItemStack itemStack) {
+    public boolean isKeyItem(ItemStack itemStack) {
+        return hasData(itemStack, new NamespacedKey(HavenRPLocks.getInstance(), "keyUUID"), UUIDDataType.INSTANCE);
+    }
+
+    public boolean isLockItem(ItemStack itemStack) {
+        return hasData(itemStack, new NamespacedKey(HavenRPLocks.getInstance(), "lockUUID"), UUIDDataType.INSTANCE);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private boolean hasData(ItemStack itemStack, NamespacedKey key, PersistentDataType<?, ?> persistentDataType) {
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        if (itemMeta == null) return false;
+        PersistentDataContainer persistentDataContainer = itemMeta.getPersistentDataContainer();
+        return persistentDataContainer.has(key, persistentDataType);
+    }
+
+    @Nullable
+    public static LockKeyPair getFromItem(ItemStack itemStack) {
         if (itemStack == null) return null;
-        Lock lock = null;
+        LockKeyPair lockKeyPair = null;
         ItemMeta itemMeta = itemStack.getItemMeta();
         if (itemMeta == null) return null;
-        UUID lockUUID = itemMeta.getPersistentDataContainer().get(new NamespacedKey(HavenRPLocks.getInstance(), "lockUUID"), UUIDDataType.INSTANCE);
-        UUID keyUUID = itemMeta.getPersistentDataContainer().get(new NamespacedKey(HavenRPLocks.getInstance(), "keyUUID"), UUIDDataType.INSTANCE);
-
+        NamespacedKey keyUuidNamespacedKey = new NamespacedKey(HavenRPLocks.getInstance(), "keyUUID");
+        NamespacedKey lockUuidNamespacedKey = new NamespacedKey(HavenRPLocks.getInstance(), "lockUUID");
+        UUID lockUUID = itemMeta.getPersistentDataContainer().get(lockUuidNamespacedKey, UUIDDataType.INSTANCE);
+        UUID keyUUID = itemMeta.getPersistentDataContainer().get(keyUuidNamespacedKey, UUIDDataType.INSTANCE);
         if (lockUUID != null && keyUUID != null) throw new IllegalStateException("Can't have item with keyUUID and lockUUID");
 
         if (lockUUID != null) {
-            lock = new Lock(lockUUID);
+            lockKeyPair = new LockKeyPair(lockUUID);
         }
         if (keyUUID != null) {
-            lock = new Lock(keyUUID);
+            lockKeyPair = new LockKeyPair(keyUUID);
         }
 
-        return lock;
+        return lockKeyPair;
     }
 }

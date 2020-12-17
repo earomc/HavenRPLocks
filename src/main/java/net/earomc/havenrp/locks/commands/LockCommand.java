@@ -16,15 +16,8 @@ public class LockCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] args) {
-        if (commandSender instanceof Player) {
-            Player player = (Player) commandSender;
-            if (args.length == 1) {
-                String lock = args[0];
-                containerLockManager.setLockMode(player, lock);
-            } else {
-                player.sendMessage("§cPlease use /lock <lockName>");
-            }
-        }
+        commandSender.sendMessage("This command is not correctly implemented yet.");
+        //rework it so that it will lock the container and then give you a lock.
         return true;
     }
 }

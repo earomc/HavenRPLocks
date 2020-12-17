@@ -2,6 +2,7 @@ package net.earomc.havenrp.locks;
 
 
 import net.earomc.havenrp.locks.lockables.*;
+import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.block.*;
 import org.bukkit.entity.Player;
@@ -17,21 +18,18 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class ContainerLockManager implements Listener {
 
-    private HashMap<String, String> playersInLockMode;
-    private HashMap<String, String> playersInUnlockMode;
+
     private ArrayList<String> playersInAdminUnlockMode;
 
     public ContainerLockManager() {
-        this.playersInLockMode = new HashMap<>();
-        this.playersInUnlockMode = new HashMap<>();
         this.playersInAdminUnlockMode = new ArrayList<>();
     }
 
@@ -41,8 +39,6 @@ public class ContainerLockManager implements Listener {
     }
 
     public void setAdminUnlockMode(Player player) {
-        removeLockMode(player);
-        removeUnlockMode(player);
         if (!isInAdminUnlockMode(player)) {
             playersInAdminUnlockMode.add(player.getName());
             player.sendMessage("§aLeft click on a container you want to unlock.");
@@ -53,44 +49,8 @@ public class ContainerLockManager implements Listener {
         playersInAdminUnlockMode.remove(player.getName());
     }
 
-    //Unlock
-    public boolean isInUnlockMode(Player player) {
-        return playersInUnlockMode.containsKey(player.getName());
-    }
-
-    public void setUnLockMode(Player player, String unlock) {
-        removeLockMode(player);
-        removeAdminUnlockMode(player);
-        if (!isInUnlockMode(player)) {
-            playersInUnlockMode.put(player.getName(), unlock);
-            player.sendMessage("§aLeft click on a container you want to unlock.");
-        }
-    }
-
-    public void removeUnlockMode(Player player) {
-        playersInUnlockMode.remove(player.getName());
-    }
-
-    //Lock
-    public boolean isInLockMode(Player player) {
-        return playersInLockMode.containsKey(player.getName());
-    }
-
-    public void setLockMode(Player player, String lock) {
-        removeUnlockMode(player);
-        removeAdminUnlockMode(player);
-        if (!isInLockMode(player)) {
-            playersInLockMode.put(player.getName(), lock);
-            player.sendMessage("§aLeft click on a container you want to lock with §9" + lock + "§a.");
-        }
-    }
-
-    public void removeLockMode(Player player) {
-        playersInLockMode.remove(player.getName());
-    }
-
-
     //Event handling
+    //Damage to break
     @EventHandler
     public void onBreakLockedContainers(BlockBreakEvent event) {
         Player player = event.getPlayer();
@@ -142,17 +102,11 @@ public class ContainerLockManager implements Listener {
 
     }
 
+    //Player events
+
     @EventHandler
     public void onPlayerSneak(PlayerToggleSneakEvent event) {
         Player player = event.getPlayer();
-        if (isInLockMode(player)) {
-            removeLockMode(player);
-            player.sendMessage("§cAborted locking process.");
-        }
-        if (isInUnlockMode(player)) {
-            removeUnlockMode(player);
-            player.sendMessage("§cAborted unlocking process.");
-        }
         if (isInAdminUnlockMode(player)) {
             removeAdminUnlockMode(player);
             player.sendMessage("§cAborted unlocking process.");
@@ -164,12 +118,10 @@ public class ContainerLockManager implements Listener {
     public void onPlayerLeave(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         removeAdminUnlockMode(player);
-        removeLockMode(player);
-        removeUnlockMode(player);
     }
 
     @EventHandler
-    public void onPlayerInteractWithChest(PlayerInteractEvent event) {
+    public void onPlayerInteractWithContainer(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         if (event.getClickedBlock() == null) return;
         if (event.getAction() != Action.LEFT_CLICK_BLOCK) return;
@@ -177,17 +129,30 @@ public class ContainerLockManager implements Listener {
         BlockState state = block.getState();
         LockableContainer lockableContainer = getLockableContainer(state);
         if (lockableContainer != null) {
-            if (isInLockMode(player)) {
-                String lock = playersInLockMode.get(player.getName());
-                handleLock(player, lock, lockableContainer);
-            } else if (isInUnlockMode(player)) {
-                String lock = playersInUnlockMode.get(player.getName());
-                handleUnlock(player, lock, lockableContainer);
-            } else if (isInAdminUnlockMode(player)) {
+            if (isInAdminUnlockMode(player)) {
                 handleAdminUnlock(player, lockableContainer);
+                return;
+            }
+
+            ItemStack item = event.getItem();
+            if (event.getItem() == null) {
+
+                return;
+            }
+            LockKeyPair lockKeyPair = LockKeyPair.getFromItem(item);
+
+            if (lockKeyPair == null) {
+
+                return;
+            }
+            if (lockKeyPair.isLockItem(item)) {
+                handleLock(player, lockKeyPair, lockableContainer);
+            } else if (lockKeyPair.isKeyItem(item)) {
+                handleUnlock(player, lockKeyPair, lockableContainer);
             }
         }
     }
+
 
     @EventHandler
     public void onMoveShulkerBoxWithPiston(BlockPistonExtendEvent event) {
@@ -196,6 +161,7 @@ public class ContainerLockManager implements Listener {
                 Lockable lockable = (Lockable) block.getState();
                 if (lockable.isLocked()) {
                     event.setCancelled(true);
+                    break;
                 }
             }
         }
@@ -209,32 +175,33 @@ public class ContainerLockManager implements Listener {
         removeAdminUnlockMode(player);
     }
 
-    private void handleUnlock(Player player, String lock, LockableContainer lockable) {
-        UnlockResult result = lockable.tryUnlock(lock);
+    private void handleUnlock(Player player, LockKeyPair lockKeyPair, LockableContainer lockable) {
+        UnlockResult result = lockable.tryUnlock(lockKeyPair.getUuid().toString());
         switch (result) {
             case SUCCESS:
                 player.sendMessage("§a" + lockable.getName() + " unlocked!");
                 player.playSound(player.getLocation(), Sound.BLOCK_BARREL_OPEN, 10, 10);
-                removeUnlockMode(player);
+                player.getWorld().dropItemNaturally(player.getLocation(), lockKeyPair.getLockItem());
                 break;
             case INCORRECT_LOCK:
-                player.sendMessage("§cCould not unlock " + lockable.getName().toLowerCase() + ". Lock is incorrect.");
+                //player.sendMessage("§cCould not unlock " + lockable.getName().toLowerCase() + ". Lock is incorrect.");
                 player.playSound(player.getLocation(), Sound.BLOCK_CHEST_LOCKED, 1, 10);
-                removeUnlockMode(player);
                 break;
+            //TODO: Maybe remove this case later:
             case CONTAINER_NOT_LOCKED:
                 player.sendMessage("§cThis " + lockable.getName().toLowerCase() + " is not locked.");
                 break;
         }
     }
 
-    private void handleLock(Player player, String lock, LockableContainer lockable) {
-        LockResult result = lockable.tryLock(lock);
+    private void handleLock(Player player, LockKeyPair lockKeyPair, LockableContainer lockable) {
+        LockResult result = lockable.tryLock(lockKeyPair.getUuid().toString());
         switch (result) {
             case SUCCESS:
-                player.sendMessage("§a" + lockable.getName() + " locked with §9" + lock + "§a.");
+                //TODO: finalize text output
+                player.getInventory().setItemInMainHand(null);
+                player.sendMessage("§a" + lockable.getName() + " locked with §9" + lockKeyPair.getUuid().toString() + "§a.");
                 player.playSound(player.getLocation(), Sound.BLOCK_CHEST_LOCKED, 1, 10);
-                removeLockMode(player);
                 break;
             case LOCK_ALREADY_SET:
                 player.sendMessage("§cCannot lock this locked " + lockable.getName().toLowerCase() + ". Lock has to be removed first.");

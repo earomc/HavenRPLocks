@@ -1,9 +1,11 @@
 name: "HavenRPLocks"
 version: "1.0"
 main: net.earomc.havenrp.locks.HavenRPLocks
+api-version: 1.16
 authors:
   - "earomc"
 commands:
+  testi:
   lock:
     description: "Locks a container."
     usage: "/lock <lock> Specify a lock word. You can then only open the container with an item with the lock's name."
